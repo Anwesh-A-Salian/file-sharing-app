@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileShare | Share Files Easily</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo">FileShare<span>.</span></a>
+        <p>Simple. Fast. Secure.</p>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">FILE SHARING MADE SIMPLE</p>
+            <h1>Send files.<br><span>Not complications.</span></h1>
+            <p class="subtitle">
+                Upload a file, get a unique code, and share it with anyone.
+            </p>
+        </section>
+
+        <section class="cards">
+            <div class="card">
+                <div class="icon">↑</div>
+                <h2>Upload a file</h2>
+                <p>Choose a file and generate a sharing code.</p>
+
+                <form id="uploadForm">
+                    <label class="file-picker" for="fileInput">
+                        <span id="fileLabel">Choose a file from your device</span>
+                        <input type="file" id="fileInput" required>
+                    </label>
+
+                    <button type="submit" id="uploadButton">
+                        Upload and get code
+                    </button>
+                </form>
+
+                <div id="uploadResult" class="result" hidden></div>
+            </div>
+
+            <div class="card">
+                <div class="icon">↓</div>
+                <h2>Download a file</h2>
+                <p>Already have a code? Enter it below.</p>
+
+                <form id="downloadForm">
+                    <label for="codeInput">Sharing code</label>
+                    <input
+                        type="text"
+                        id="codeInput"
+                        placeholder="e.g. A7K2Q9"
+                        maxlength="6"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <button type="submit" class="secondary-button">
+                        Find my file
+                    </button>
+                </form>
+
+                <div id="downloadResult" class="result" hidden></div>
+            </div>
+        </section>
+
+        <p class="notice">
+            Only download files from people you trust.
+        </p>
+    </main>
+
+    <footer>Built by Sathwik and Anwesh · FileShare</footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
