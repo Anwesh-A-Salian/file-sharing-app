@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import secrets
 import re
+from typing import List
 from fastapi.responses import FileResponse
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -81,64 +82,181 @@ def load_file_metadata(code: str):
     return metadata, file_path
 
 
+
+def get_group_metadata(code: str):
+    if not re.fullmatch(r"[A-Fa-f0-9]{8}", code):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid sharing code"
+        )
+
+    code = code.upper()
+    metadata_path = UPLOAD_DIR / f"{code}.json"
+
+    if not metadata_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Sharing code not found"
+        )
+
+    try:
+        metadata = json.loads(
+            metadata_path.read_text(encoding="utf-8")
+        )
+    except (json.JSONDecodeError, OSError):
+        raise HTTPException(
+            status_code=500,
+            detail="Could not read sharing information"
+        )
+
+    if not isinstance(metadata.get("files"), list):
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid sharing information"
+        )
+
+    return metadata
+
+
 @app.get("/api/files/{code}")
-def get_file_info(code: str):
-    metadata, _ = load_file_metadata(code)
+def get_files(code: str):
+    metadata = get_group_metadata(code)
 
     return {
         "code": metadata["code"],
-        "filename": metadata["original_name"],
-        "size": metadata["size"],
-        "download_url": f"/api/download/{metadata['code']}"
+        "files": [
+            {
+                "id": item["id"],
+                "filename": item["original_name"],
+                "size": item["size"],
+            }
+            for item in metadata["files"]
+        ],
     }
 
 
-@app.get("/api/download/{code}")
-def download_file(code: str):
-    metadata, file_path = load_file_metadata(code)
+@app.get("/api/download/{code}/{file_id}")
+def download_file(code: str, file_id: str):
+    metadata = get_group_metadata(code)
+
+    item = next(
+        (
+            file for file in metadata["files"]
+            if file["id"] == file_id
+        ),
+        None
+    )
+
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="File not found in this sharing group"
+        )
+
+    stored_filename = item.get("stored_filename", "")
+
+    if (
+        not isinstance(stored_filename, str)
+        or Path(stored_filename).name != stored_filename
+    ):
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid stored file information"
+        )
+
+    file_path = UPLOAD_DIR / stored_filename
+
+    if not file_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Stored file not found"
+        )
 
     return FileResponse(
         path=file_path,
-        filename=metadata["original_name"],
-        media_type="application/octet-stream"
+        filename=item["original_name"],
+        media_type="application/octet-stream",
     )
 
-@app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
-    filename = Path(file.filename or "").name
-    extension = Path(filename).suffix.lower()
 
-    if not filename or extension not in ALLOWED_EXTENSIONS:
+
+@app.post("/api/upload")
+async def upload_files(files: List[UploadFile] = File(...)):
+    if not files:
         raise HTTPException(
             status_code=400,
-            detail="Unsupported file type"
+            detail="Select at least one file"
         )
 
+    if len(files) > 10:
+        raise HTTPException(
+            status_code=400,
+            detail="You can upload at most 10 files at once"
+        )
+
+    prepared_files = []
+
+    # Validate every file before saving anything.
+    for file in files:
+        filename = Path(file.filename or "").name
+        extension = Path(filename).suffix.lower()
+
+        if not filename or extension not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {filename or 'unknown'}"
+            )
+
+        prepared_files.append({
+            "upload": file,
+            "filename": filename,
+            "extension": extension,
+        })
+
     code = secrets.token_hex(4).upper()
-    stored_filename = f"{code}{extension}"
-    file_path = UPLOAD_DIR / stored_filename
     metadata_path = UPLOAD_DIR / f"{code}.json"
 
-    size = 0
+    stored_paths = []
+    file_metadata = []
 
     try:
-        with file_path.open("xb") as output:
-            while chunk := await file.read(CHUNK_SIZE):
-                size += len(chunk)
+        # Reserve the code so concurrent uploads cannot reuse it.
+        with metadata_path.open("x", encoding="utf-8") as reservation:
+            reservation.write("{}")
 
-                if size > MAX_FILE_SIZE:
-                    raise HTTPException(
-                        status_code=413,
-                        detail="File exceeds 10 MB limit"
-                    )
+        for index, item in enumerate(prepared_files, start=1):
+            file = item["upload"]
+            filename = item["filename"]
+            extension = item["extension"]
 
-                output.write(chunk)
+            stored_filename = f"{code}_{index}{extension}"
+            file_path = UPLOAD_DIR / stored_filename
+            size = 0
+
+            with file_path.open("xb") as output:
+                stored_paths.append(file_path)
+
+                while chunk := await file.read(CHUNK_SIZE):
+                    size += len(chunk)
+
+                    if size > MAX_FILE_SIZE:
+                        raise HTTPException(
+                            status_code=413,
+                            detail=f"{filename} exceeds the 10 MB limit"
+                        )
+
+                    output.write(chunk)
+
+            file_metadata.append({
+                "id": str(index),
+                "original_name": filename,
+                "stored_filename": stored_filename,
+                "size": size,
+            })
 
         metadata = {
             "code": code,
-            "original_name": filename,
-            "stored_filename": stored_filename,
-            "size": size
+            "files": file_metadata,
         }
 
         metadata_path.write_text(
@@ -146,22 +264,32 @@ async def upload_file(file: UploadFile = File(...)):
             encoding="utf-8"
         )
 
+        return {
+            "message": "Files uploaded successfully",
+            "code": code,
+            "files": [
+                {
+                    "id": item["id"],
+                    "filename": item["original_name"],
+                    "size": item["size"],
+                }
+                for item in file_metadata
+            ],
+        }
+
     except FileExistsError:
         raise HTTPException(
             status_code=409,
-            detail="Code collision. Please retry."
+            detail="Sharing code collision. Please retry."
         )
 
     except Exception:
-        file_path.unlink(missing_ok=True)
+        for path in stored_paths:
+            path.unlink(missing_ok=True)
+
+        metadata_path.unlink(missing_ok=True)
         raise
 
     finally:
-        await file.close()
-
-    return {
-        "message": "File uploaded successfully",
-        "code": code,
-        "filename": filename,
-        "size": size
-    }
+        for file in files:
+            await file.close()
