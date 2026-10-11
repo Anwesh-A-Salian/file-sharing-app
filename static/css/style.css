@@ -1,0 +1,254 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f7fb;
+    color: #172033;
+    min-height: 100vh;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 8%;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e9f2;
+}
+
+.logo {
+    color: #172033;
+    font-size: 25px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.logo span {
+    color: #536dfe;
+}
+
+.navbar p {
+    color: #68738a;
+    font-size: 14px;
+}
+
+.container {
+    width: 84%;
+    max-width: 1050px;
+    margin: 65px auto 45px;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 42px;
+}
+
+.eyebrow {
+    color: #536dfe;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+}
+
+.hero h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.15;
+    margin-bottom: 18px;
+}
+
+.hero h1 span {
+    color: #536dfe;
+}
+
+.subtitle {
+    color: #68738a;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e5e9f2;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(30, 45, 80, 0.04);
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: #edf0ff;
+    color: #536dfe;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.card > p {
+    color: #68738a;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.file-picker {
+    min-height: 100px;
+    padding: 18px;
+    border: 2px dashed #cbd3e3;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #68738a;
+    cursor: pointer;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.file-picker:hover {
+    border-color: #536dfe;
+    background: #f8f9ff;
+}
+
+.file-picker input {
+    max-width: 100%;
+    font-size: 12px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #d6dce8;
+    border-radius: 8px;
+    outline: none;
+    font-size: 15px;
+}
+
+input[type="text"]:focus {
+    border-color: #536dfe;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    background: #536dfe;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+button:hover {
+    background: #4056e8;
+    transform: translateY(-1px);
+}
+
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.secondary-button {
+    background: #172033;
+}
+
+.secondary-button:hover {
+    background: #303d56;
+}
+
+.result {
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 8px;
+    background: #f0f3ff;
+    color: #263a9a;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.download-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #4056e8;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.download-link:hover {
+    text-decoration: underline;
+}
+
+.notice {
+    text-align: center;
+    color: #7a8498;
+    font-size: 13px;
+    margin-top: 30px;
+}
+
+footer {
+    text-align: center;
+    color: #7a8498;
+    padding: 24px;
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    .navbar {
+        padding: 18px 6%;
+    }
+
+    .navbar p {
+        font-size: 12px;
+    }
+
+    .container {
+        width: 90%;
+        margin-top: 42px;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .card {
+        padding: 24px;
+    }
+}
